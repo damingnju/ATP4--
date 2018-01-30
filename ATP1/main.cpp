@@ -1,4 +1,4 @@
-//spark version
+//spark
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>   
