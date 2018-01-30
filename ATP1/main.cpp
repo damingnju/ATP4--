@@ -14,9 +14,8 @@
 #include <math.h>
 #include "Thorlabs.MotionControl.KCube.Piezo.h"
 
-#include <stdio.h>  
-#include <pthread.h>  
-#include <assert.h>   
+#include <thread>    
+#include <mutex>         
 
 #pragma once
 
@@ -29,6 +28,9 @@ cv::Point2f GetSpotCenter(Camera& camera);
 
 int main()
 {
+	// define data lock
+	std::mutex mtx;
+
 	// initialize camera
 	Error error;
 	Camera camera;
@@ -41,30 +43,30 @@ int main()
 	camera.GetCameraInfo(&camInfo);
 
 	std::cout << camInfo.vendorName << " "
-		      << camInfo.modelName << " "
+		      << camInfo.modelName  << " "
 		      << camInfo.serialNumber << std::endl;
 
 	// change shutter using camera internal unit
 	Property shutter;
 	shutter.type = SHUTTER;
 	shutter.absControl = false;
-	shutter.valueA = 2000;
+	shutter.valueA = 1;
 	camera.SetProperty(&shutter);
-
+	
+	//Sleep(sleeptime);
+	
 	// Get the image
 	Image monoImage;
-	Sleep(sleeptime);
-	camera.RetrieveBuffer(&monoImage);
-
+	camera.RetrieveBuffer(&monoImage); 
 
 	// convert to OpenCV Mat
 	unsigned int rowBytes = (double)monoImage.GetReceivedDataSize() / (double)monoImage.GetRows();
 	cv::Mat image = cv::Mat(monoImage.GetRows(), monoImage.GetCols(), CV_8UC1, monoImage.GetData(), rowBytes);
 
 
-	//cv::namedWindow("win");
-	//cv::imshow("win", image);
-	//cv::waitKey();
+	cv::namedWindow("win");
+	cv::imshow("win", image);
+	cv::waitKey();
 
 	// initialize the kpz101
 
