@@ -19,6 +19,13 @@
 
 #pragma once
 
+#define MAX_OUTPUT 32767.0
+#define MAX_VOLTAGE_FROM_PID 150
+#define MIN_VOLTAGE_FROM_PID 0
+
+/******************************* comments by ziming: change the val to 1 if you want to enable the code in debug block *******************/
+#define DEBUG_MODE 0
+
 using namespace std;
 using namespace FlyCapture2;
 
@@ -43,8 +50,8 @@ int main()
 	camera.GetCameraInfo(&camInfo);
 
 	std::cout << camInfo.vendorName << " "
-		      << camInfo.modelName  << " "
-		      << camInfo.serialNumber << std::endl;
+		<< camInfo.modelName << " "
+		<< camInfo.serialNumber << std::endl;
 
 	// change shutter using camera internal unit
 	Property shutter;
@@ -52,12 +59,12 @@ int main()
 	shutter.absControl = false;
 	shutter.valueA = 1;
 	camera.SetProperty(&shutter);
-	
+
 	//Sleep(sleeptime);
-	
+
 	// Get the image
 	Image monoImage;
-	camera.RetrieveBuffer(&monoImage); 
+	camera.RetrieveBuffer(&monoImage);
 
 	// convert to OpenCV Mat
 	unsigned int rowBytes = (double)monoImage.GetReceivedDataSize() / (double)monoImage.GetRows();
@@ -74,12 +81,13 @@ int main()
 	TLI_BuildDeviceList();
 
 	//get device list size
-	short n = TLI_GetDeviceListSize();
-	printf("Found Device matched: %d!\r\n", n);
+	short listSize = TLI_GetDeviceListSize();
+	printf("Found Device matched: %d!\r\n", listSize);
 	char *context = NULL;
 	//get BBD serial numbers
 	char serialNos[100] = { '0' };
 	TLI_GetDeviceListByTypeExt(serialNos, 100, 29);
+	/******************************* comments by ziming: resize the vector *****************************************/
 	std::vector<std::string> serialNo_total(0);
 
 	//output list of matching devices
@@ -106,7 +114,7 @@ int main()
 	char testSerialNo[2][9] = { '\0' };
 	short maximumoutput = 150;
 	short setmaximumoutput = maximumoutput * 10;
-	for (short i = 0; i < n; i++)
+	for (short i = 0; i < listSize; i++)
 	{
 		strncpy_s(testSerialNo[i], serialNo_total[i].c_str(), serialNo_total[i].length());
 		PCC_Open(testSerialNo[i]);
@@ -125,8 +133,8 @@ int main()
 	// set initial voltage
 	double outputvoltage0 = double(75);
 	double outputvoltage1 = double(75);
-	short setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * 32767.0);
-	short setoutputvoltage1 = short(outputvoltage1 / double(maximumoutput) * 32767.0);
+	short setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * MAX_OUTPUT);
+	short setoutputvoltage1 = short(outputvoltage1 / double(maximumoutput) * MAX_OUTPUT);
 	PCC_SetOutputVoltage(testSerialNo[0], setoutputvoltage0);
 	PCC_SetOutputVoltage(testSerialNo[1], setoutputvoltage1);
 
@@ -150,7 +158,7 @@ int main()
 
 		// change voltage
 		double outputvoltage = double(j);
-		short setoutputvoltage = short(outputvoltage / double(maximumoutput) * 32767.0);
+		short setoutputvoltage = short(outputvoltage / double(maximumoutput) * MAX_OUTPUT);
 		PCC_SetOutputVoltage(testSerialNo[0], setoutputvoltage);
 
 		Sleep(sleeptime);
@@ -201,9 +209,7 @@ int main()
 		{
 			sign_y = -1;
 		}
-	}
-	else
-	{
+	} else {
 		if (x_mean < 0)
 		{
 			sign_x = -1;
@@ -219,7 +225,7 @@ int main()
 
 			// change voltage
 			double outputvoltage = double(j);
-			short setoutputvoltage = short(outputvoltage / double(maximumoutput) * 32767.0);
+			short setoutputvoltage = short(outputvoltage / double(maximumoutput) * MAX_OUTPUT);
 			PCC_SetOutputVoltage(testSerialNo[0], setoutputvoltage);
 
 			Sleep(sleeptime);
@@ -243,15 +249,12 @@ int main()
 		{
 			sign_x = -1;
 		}
-	}
-	else
-	{
+	} else {
 		for (int j = calib_iter_start; j <= calib_iter; j++) // calibrate with calib_iter 
 		{
-
 			// change voltage
 			double outputvoltage = double(j);
-			short setoutputvoltage = short(outputvoltage / double(maximumoutput) * 32767.0);
+			short setoutputvoltage = short(outputvoltage / double(maximumoutput) * MAX_OUTPUT);
 			PCC_SetOutputVoltage(testSerialNo[1], setoutputvoltage);
 
 			Sleep(sleeptime);
@@ -289,8 +292,8 @@ int main()
 	// start ATP from a bad position
 	outputvoltage0 = double(35);
 	outputvoltage1 = double(125);
-	setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * 32767.0);
-	setoutputvoltage1 = short(outputvoltage1 / double(maximumoutput) * 32767.0);
+	setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * MAX_OUTPUT);
+	setoutputvoltage1 = short(outputvoltage1 / double(maximumoutput) * MAX_OUTPUT);
 	PCC_SetOutputVoltage(testSerialNo[0], setoutputvoltage0);
 	PCC_SetOutputVoltage(testSerialNo[1], setoutputvoltage1);
 
@@ -312,16 +315,21 @@ int main()
 		double kp_0 = 5.5, kp_1 = 5.5;    // Proportion
 		double ki_0 = 0.8, ki_1 = 0.8; // Integral    
 		double kd_0 = 0.0, kd_1 = 0.0; // Derivative
-		double x_error_present = xloc - initMassCenter.x, y_error_present = yloc - initMassCenter.y;
+		double x_error_present = xloc - initMassCenter.x,
+			y_error_present = yloc - initMassCenter.y;
 		double delta_v0 = 0, delta_v1 = 0, v0 = outputvoltage0, v1 = outputvoltage1;
 		double x_error_last = 0, y_error_last = 0;
 		double x_error_previous = 0, y_error_previous = 0;
+		/******************************* comments by ziming: resize the vector, and remove unused vectors********************/
 		std::vector<double> position_error_x(0);
 		std::vector<double> position_error_y(0);
 
+		/******************************* comments by ziming: the code for x and y is similar,
+		you can make a function to do the analysis like truncatedVoltage ********************/
 		int run_times_1 = 0;
 		while (abs(x_error_present) > error_tolerance && run_times_1 < 500)
 		{
+
 			delta_v0 = kp_0 * (x_error_present - x_error_last)
 				+ ki_0 * x_error_present
 				+ kd_0 * (x_error_present - 2 * x_error_last + x_error_previous);
@@ -329,21 +337,13 @@ int main()
 			v0 += delta_v0;
 			run_times_1++;
 
-			if (v0 >= 150)
-			{
-				v0 = 150;
-				cout << "voltage too high" << endl;
-			}
-
-			if (v0 <= 0)
-			{
-				v0 = 0;
-				cout << "voltage too low" << endl;
-			}
+			v1 = truncatedVoltage(v1);
 
 			// set output voltage
 			double outputvoltage0 = double(v0);
-			short setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * 32767.0);
+			short setoutputvoltage0 = short(outputvoltage0 / double(maximumoutput) * MAX_OUTPUT);
+			/******************************* comments by ziming: i don't know the detail of the implementation,
+			but i think you should double check the code below *****************************************/
 			PCC_SetOutputVoltage(testSerialNo[0], setoutputvoltage0);
 			Sleep(sleeptime);
 
@@ -358,6 +358,7 @@ int main()
 			x_error_last = x_error_present;
 
 			x_error_present = xloc - initMassCenter.x;
+			/******************************* comments by ziming: the code will cause memory leak *****************************************/
 			position_error_x.push_back(x_error_present);
 
 		}
@@ -372,21 +373,10 @@ int main()
 			v1 -= delta_v1;
 			run_times_2++;
 
-			if (v1 >= 150)
-			{
-				v1 = 150;
-				cout << "voltage too high" << endl;
-			}
-
-			if (v1 <= 0)
-			{
-				v1 = 0;
-				cout << "voltage too low" << endl;
-			}
+			v1 = truncatedVoltage(v1);
 
 			// set output voltage
-			double outputvoltage1 = double(v1);
-			short setoutputvoltage1 = short(outputvoltage1 / double(maximumoutput) * 32767.0);
+			short setoutputvoltage1 = short(double(v1) / double(maximumoutput) * MAX_OUTPUT);
 			PCC_SetOutputVoltage(testSerialNo[1], setoutputvoltage1);
 
 			Sleep(sleeptime);
@@ -408,17 +398,16 @@ int main()
 
 		}
 
-		//for debug 
-		//fstream outputFile;
-		//outputFile.open("output_error.txt", std::ios::out);
-		//for (short ii = 0; ii < position_error.size(); ii++)
-		//{
-		//	outputFile << position_error[ii] << std::endl;
-		//}
-		//outputFile.close();
-
+#if DEBUG_MODE
+		fstream outputFile;
+		outputFile.open("output_error.txt", std::ios::out);
+		for (short ii = 0; ii < position_error.size(); ii++)
+		{
+			outputFile << position_error[ii] << std::endl;
+		}
+		outputFile.close();
+#endif // !DEBUG_MODE
 	}
-
 
 	error = camera.StopCapture();
 	if (error != PGRERROR_OK)
@@ -427,25 +416,37 @@ int main()
 		// an error message
 	}
 
-	for (int m = 0; m < n; m++)
+	for (int m = 0; m < listSize; m++)
 	{
 		PCC_Close(testSerialNo[m]);
 	}
-
 
 	return 0;
 }
 
 
 
+int truncatedVoltage(int voltageIn) {
+	if (voltageIn >= MAX_VOLTAGE_FROM_PID)
+	{
+		cout << "voltage too high" << endl;
+		return MAX_VOLTAGE_FROM_PID;
+	}
 
+	if (voltageIn <= MIN_VOLTAGE_FROM_PID)
+	{
+		cout << "voltage too low" << endl;
+		return MIN_VOLTAGE_FROM_PID
+	}
+
+	return voltageIn;
+}
 
 
 
 
 cv::Point2f GetSpotCenter(Camera& camera)
 {
-
 	Image monoImage;
 	camera.RetrieveBuffer(&monoImage);
 	//Sleep(100);
@@ -453,7 +454,6 @@ cv::Point2f GetSpotCenter(Camera& camera)
 	// convert to OpenCV Mat
 	unsigned int rowBytes = (double)monoImage.GetReceivedDataSize() / (double)monoImage.GetRows();
 	cv::Mat image = cv::Mat(monoImage.GetRows(), monoImage.GetCols(), CV_8UC1, monoImage.GetData(), rowBytes);
-
 
 	// blur it slightly
 	cv::Mat blurred;
@@ -465,10 +465,8 @@ cv::Point2f GetSpotCenter(Camera& camera)
 
 	// find contours in the thresholded image
 	cv::Mat dst = cv::Mat::zeros(image.rows, image.cols, CV_8UC3);
-
 	vector< vector<cv::Point> > contours;
 	vector<cv::Vec4i> hierarchy;
-
 	cv::findContours(thresh, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	// find the largest contour
@@ -477,8 +475,8 @@ cv::Point2f GetSpotCenter(Camera& camera)
 
 	for (size_t i = 0; i < contours.size(); i++)  // iterate through each contour.
 	{
+		/******************************* comments by ziming: where is contourArea, i can't find the namespace ********************/
 		double area = contourArea(contours[i]);  //  Find the area of contour
-
 		if (area > largest_area)
 		{
 			largest_area = area;
@@ -486,8 +484,9 @@ cv::Point2f GetSpotCenter(Camera& camera)
 		}
 	}
 
-
-
+	/******************************* comments by ziming: once you verified the contours, there is no need to draw on dst;
+	for drawing is time-consuming, you can put the code in #if DEBUG_MODE block;
+	check same issue for other functions  ********************/
 	for (int idx = 0; idx >= 0; idx = hierarchy[idx][0])
 	{
 		cv::Scalar color(rand() & 255, rand() & 255, rand() & 255);
@@ -496,16 +495,13 @@ cv::Point2f GetSpotCenter(Camera& camera)
 
 	// Get the moments
 	vector<cv::Moments> mu(contours.size());
-
 	for (int i = 0; i < contours.size(); i++)
 	{
 		mu[i] = moments(contours[i], false);
 	}
 
-
 	// Get the mass centers:
 	vector<cv::Point2f> mc(contours.size());
-	//for (int i = 0; i < contours.size(); i++)
 	for (int i = largest_contour_index; i <= largest_contour_index; i++) // only excute once
 	{
 		mc[i] = cv::Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
@@ -517,7 +513,6 @@ cv::Point2f GetSpotCenter(Camera& camera)
 		Orig.y = mc[i].y - 20;
 
 		cv::putText(image, "center", Orig, cv::FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1);
-
 	}
 
 	cv::drawContours(image, contours, -1, (255, 255, 0), 2);
