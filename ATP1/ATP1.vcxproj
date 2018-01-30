@@ -145,6 +145,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="pthreadGC2.dll" />
+    <None Include="pthreadVC2.dll" />
     <None Include="Thorlabs.MotionControl.DeviceManager.dll" />
     <None Include="Thorlabs.MotionControl.KCube.Piezo.dll" />
   </ItemGroup>

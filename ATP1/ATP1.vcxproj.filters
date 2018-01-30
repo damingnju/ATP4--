@@ -26,6 +26,12 @@
     <None Include="Thorlabs.MotionControl.DeviceManager.dll">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="pthreadGC2.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pthreadVC2.dll">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Thorlabs.MotionControl.KCube.Piezo.lib">

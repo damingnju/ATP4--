@@ -13,6 +13,11 @@
 #include <tchar.h>
 #include <math.h>
 #include "Thorlabs.MotionControl.KCube.Piezo.h"
+
+#include <stdio.h>  
+#include <pthread.h>  
+#include <assert.h>   
+
 #pragma once
 
 using namespace std;
@@ -20,9 +25,10 @@ using namespace FlyCapture2;
 
 cv::Point2f GetSpotCenter(Camera& camera);
 
+
+
 int main()
 {
-
 	// initialize camera
 	Error error;
 	Camera camera;
@@ -35,8 +41,8 @@ int main()
 	camera.GetCameraInfo(&camInfo);
 
 	std::cout << camInfo.vendorName << " "
-		<< camInfo.modelName << " "
-		<< camInfo.serialNumber << std::endl;
+		      << camInfo.modelName << " "
+		      << camInfo.serialNumber << std::endl;
 
 	// change shutter using camera internal unit
 	Property shutter;
